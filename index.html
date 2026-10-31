@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mochi Money</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mochi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap">
+<style>
+/* Layout: one phone column. A living scene on top, the four buckets under it, the ledger below. Dark theme turns the scene to night. */
+:root {
+  --bg: #eef7f4; --surface: #ffffff; --fg: #24384a; --muted: #5d7180; --line: #d5e6e2;
+  --sky: #bfe8f7; --sky2: #e4f6e9; --ground: #a9dc9b; --ground2: #8ccb86; --cloud: #ffffff; --star: 0;
+  --mochi: #b5763f; --mochi-edge: #8a5428; --cheek: #ff9aa8; --ink: #2e1c14; --belly: #ffe6c9;
+  --food: #d9610b; --transport: #1673b8; --shopping: #cf2f7c; --others: #7a4fd0;
+  --action: #24384a; --on-action: #ffffff; --track: #6f8797; --window: #d9f3ff; --alert: #c8201f;
+  --display: "Mochiy Pop One", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --body: "M PLUS Rounded 1c", ui-rounded, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111c2b; --surface: #1b2a3d; --fg: #eaf3f8; --muted: #a2b5c4; --line: #2e4158;
+  --sky: #17264a; --sky2: #2e3d68; --ground: #27524a; --ground2: #1e423d; --cloud: #3a4a72; --star: 1;
+  --mochi: #b5763f; --mochi-edge: #8a5428; --cheek: #ff9aa8; --ink: #2e1c14; --belly: #ffe6c9;
+  --food: #ff9a4d; --transport: #5fb7f5; --shopping: #ff7db8; --others: #b49bff;
+  --action: #ffd9c2; --on-action: #2b1c20; --track: #8799b5; --window: #fff1b8; --alert: #ff7a73; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #111c2b; --surface: #1b2a3d; --fg: #eaf3f8; --muted: #a2b5c4; --line: #2e4158;
+  --sky: #17264a; --sky2: #2e3d68; --ground: #27524a; --ground2: #1e423d; --cloud: #3a4a72; --star: 1;
+  --mochi: #b5763f; --mochi-edge: #8a5428; --cheek: #ff9aa8; --ink: #2e1c14; --belly: #ffe6c9;
+  --food: #ff9a4d; --transport: #5fb7f5; --shopping: #ff7db8; --others: #b49bff;
+  --action: #ffd9c2; --on-action: #2b1c20; --track: #8799b5; --window: #fff1b8; --alert: #ff7a73; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+.catPick { max-width: 100%; border: 0; padding: 2px 0; background: transparent; color: var(--c); font-weight: 800; font-size: .82rem; }
+.tag { font-size: .72rem; font-weight: 800; color: var(--muted); }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--transport); outline-offset: 2px; }
+.app { max-width: 480px; margin: 0 auto; display: grid; gap: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 104px; }
+.top { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; text-align: center; }
+.top h1 { margin: 0; font: 400 1.05rem var(--display); }
+.top .total { font: 800 1.9rem var(--body); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.nav { width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; font-size: 1.5rem; }
+.nav:hover { background: var(--line); }
+.scene { border-radius: 28px; overflow: hidden; display: block; width: 100%; max-width: 100%; height: auto; }
+.bubble { position: relative; margin: 0; padding: 10px 14px; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; text-align: center; font-weight: 700; }
+.bubble::before { content: ""; position: absolute; top: -9px; left: 50%; width: 14px; height: 14px; margin-left: -7px; background: var(--surface); border-left: 2px solid var(--line); border-top: 2px solid var(--line); transform: rotate(45deg); }
+.example { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 8px 12px; border: 2px dashed var(--others); border-radius: 14px; font-size: .9rem; font-weight: 700; }
+.link { border: 0; background: none; padding: 6px 0; text-decoration: underline; font-weight: 700; }
+.buckets { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.bucket { min-width: 0; display: grid; gap: 1px; text-align: left; padding: 12px 14px; border: 2px solid var(--line); border-radius: 18px; background: var(--surface); }
+.bucket:hover { border-color: var(--c); }
+.bucket .name { font-weight: 800; color: var(--c); }
+.bucket .amt { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.bucket .fx { font-size: .82rem; color: var(--muted); }
+.bucket .bar { height: 7px; margin-block: 5px 3px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bucket .bar i { display: block; height: 100%; border-radius: 4px; background: var(--c); }
+.bucket.over { border-color: var(--alert); }
+.bucket.over .bar i { background: var(--alert); }
+.bucket.over .fx { color: var(--alert); font-weight: 800; }
+.budgetHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: -8px; }
+.budgetHead h2 { margin: 0; font: 400 1rem var(--display); }
+.ledger h2 { margin: 6px 0; font: 400 1rem var(--display); }
+.ledger ul { list-style: none; margin: 0; padding: 0; }
+.row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 40px; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--c); }
+.row .what { min-width: 0; overflow-wrap: anywhere; font-weight: 700; }
+.row small { display: block; font-weight: 400; color: var(--muted); }
+.row .amt { font-weight: 800; font-variant-numeric: tabular-nums; }
+.del { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--muted); font-size: 1.1rem; }
+.del:hover { background: var(--line); }
+.empty { color: var(--muted); margin: 6px 0; }
+.foot { font-size: .8rem; color: var(--muted); text-align: center; margin: 0; }
+.add { position: fixed; z-index: 5; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); padding: 14px 30px; border: 0; border-radius: 999px; background: var(--action); color: var(--on-action); font: 400 1.05rem var(--display); box-shadow: 0 6px 18px rgb(0 0 0 / .25); white-space: nowrap; }
+.add:disabled { opacity: .5; cursor: wait; }
+.shade { position: fixed; z-index: 10; inset: 0; background: rgb(10 20 30 / .5); }
+.sheet { position: fixed; z-index: 11; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; display: grid; gap: 14px; background: var(--surface); border-radius: 26px 26px 0 0;
+  padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px));
+  padding-block: 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.sheet h2 { margin: 0; font: 400 1.15rem var(--display); }
+.cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; border: 0; margin: 0; padding: 0; }
+.cats label { display: block; text-align: center; padding: 10px 2px; border: 2px solid var(--line); border-radius: 14px; font-weight: 800; font-size: .86rem; cursor: pointer; }
+.cats input { position: absolute; opacity: 0; }
+.cats input:checked + span { color: var(--c); }
+.cats label:has(input:checked) { border-color: var(--c); }
+.cats label:has(input:focus-visible) { outline: 3px solid var(--transport); outline-offset: 2px; }
+.field { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; min-width: 0; }
+.field input { width: 100%; min-width: 0; padding: 11px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); font-weight: 400; font-size: 1rem; }
+#amount { font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.err { margin: 0; color: var(--food); font-weight: 700; }
+.actions { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+.actions button { padding: 13px 20px; border-radius: 14px; border: 2px solid var(--line); background: none; font-weight: 800; }
+.actions .save { border-color: var(--action); background: var(--action); color: var(--on-action); }
+.toast { position: fixed; z-index: 20; left: 16px; right: 16px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); max-width: 440px; margin: 0 auto; padding: 10px 14px; border-radius: 12px; background: var(--action); color: var(--on-action); text-align: center; font-weight: 700; }
+#mochi { transform-box: fill-box; transform-origin: 50% 100%; }
+#mochi.boing { animation: boing .55s ease; }
+@keyframes boing { 25% { transform: scale(1.1, .88); } 55% { transform: scale(.94, 1.08); } 80% { transform: scale(1.03, .98); } }
+.pop { transform-box: fill-box; transform-origin: 50% 100%; animation: pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes pop { from { transform: scale(0); } }
+.bob { animation: bob 3.5s ease-in-out infinite alternate; }
+.bob:nth-of-type(even) { animation-delay: -1.5s; }
+@keyframes bob { to { transform: translateY(-6px); } }
+.blink { animation: blink 5s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97.5% { transform: scaleY(.1); } }
+#squash { transform-box: view-box; transform-origin: 180px 306px; transition: transform .4s ease; }
+#tower { transform-box: view-box; }
+.strain2 #tower { animation: sway 1.1s ease-in-out infinite alternate; }
+.strain3 #tower { animation: sway .6s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+#shaker.strain2 { animation: shake .4s linear infinite; }
+#shaker.strain3 { animation: shake .2s linear infinite; }
+@keyframes shake { 25% { transform: translateX(-1.5px); } 75% { transform: translateX(1.5px); } }
+#sweat path { animation: drip 1.2s ease-in infinite; }
+#sweat path:nth-child(2) { animation-delay: -.4s; }
+#sweat path:nth-child(3) { animation-delay: -.8s; }
+@keyframes drip { from { transform: translateY(-3px); opacity: 1; } to { transform: translateY(12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #mochi.boing, .pop, .bob, .blink, #tower, #shaker, #sweat path { animation: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="app">
+  <header class="top">
+    <button class="nav" id="prev" type="button" aria-label="Previous month">‹</button>
+    <div><h1 id="month"></h1><div class="total" id="total"></div></div>
+    <button class="nav" id="next" type="button" aria-label="Next month">›</button>
+  </header>
+
+  <svg class="scene" id="scene" viewBox="0 0 360 340" role="img" aria-labelledby="sceneText">
+    <defs><linearGradient id="skyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky)"/><stop offset="1" style="stop-color:var(--sky2)"/></linearGradient></defs>
+    <rect width="360" height="340" fill="url(#skyFill)"/>
+    <g style="opacity:var(--star)" fill="#fff5c4"><circle cx="70" cy="62" r="1.6"/><circle cx="120" cy="88" r="1.2"/><circle cx="292" cy="58" r="1.6"/><circle cx="250" cy="92" r="1.2"/><circle cx="182" cy="56" r="1.3"/><circle cx="18" cy="110" r="1.2"/><circle cx="344" cy="112" r="1.4"/></g>
+    <g style="fill:var(--cloud)" opacity=".85"><ellipse cx="88" cy="96" rx="26" ry="10"/><ellipse cx="102" cy="88" rx="16" ry="10"/><ellipse cx="278" cy="108" rx="24" ry="9"/><ellipse cx="266" cy="101" rx="13" ry="8"/></g>
+    <rect y="42" width="360" height="5" style="fill:var(--track)"/>
+    <g style="fill:var(--track)"><rect x="50" y="47" width="5" height="10"/><rect x="178" y="47" width="5" height="10"/><rect x="306" y="47" width="5" height="10"/></g>
+    <g id="train"></g>
+    <path d="M0 262 Q90 244 180 258 T360 254 V340 H0 Z" style="fill:var(--ground)"/>
+    <path d="M0 322 Q120 304 220 320 T360 314 V340 H0 Z" style="fill:var(--ground2)"/>
+    <g id="balloons"></g>
+    <g id="shaker"><g id="mochi"><g id="squash">
+      <ellipse id="shadow" cx="180" cy="304" rx="60" ry="7" fill="#000" opacity=".13"/>
+      <path id="tail" fill="none" style="stroke:var(--mochi)" stroke-width="9" stroke-linecap="round"/>
+      <g id="hanging"></g>
+      <ellipse id="footL" cy="299" rx="17" ry="9" style="fill:var(--belly);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <ellipse id="footR" cy="299" rx="17" ry="9" style="fill:var(--belly);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <path id="armL" fill="none" style="stroke:var(--mochi)" stroke-width="13" stroke-linecap="round"/>
+      <path id="armR" fill="none" style="stroke:var(--mochi)" stroke-width="13" stroke-linecap="round"/>
+      <circle id="handL" r="8" style="fill:var(--belly);stroke:var(--mochi-edge)" stroke-width="2"/>
+      <circle id="handR" r="8" style="fill:var(--belly);stroke:var(--mochi-edge)" stroke-width="2"/>
+      <ellipse id="body" cx="180" style="fill:var(--mochi);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <ellipse id="belly" cx="180" style="fill:var(--belly)"/>
+      <circle id="earL" r="17" style="fill:var(--mochi);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <circle id="earR" r="17" style="fill:var(--mochi);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <circle id="earInL" r="10" style="fill:var(--cheek)"/>
+      <circle id="earInR" r="10" style="fill:var(--cheek)"/>
+      <ellipse id="head" cx="180" style="fill:var(--mochi);stroke:var(--mochi-edge)" stroke-width="2.5"/>
+      <path id="tuft" fill="none" style="stroke:var(--mochi-edge)" stroke-width="4" stroke-linecap="round"/>
+      <circle id="maskL" r="21" style="fill:var(--belly)"/>
+      <circle id="maskR" r="21" style="fill:var(--belly)"/>
+      <ellipse id="muzzle" cx="180" style="fill:var(--belly)"/>
+      <ellipse id="cheekL" style="fill:var(--cheek)" opacity=".75"/>
+      <ellipse id="cheekR" style="fill:var(--cheek)" opacity=".75"/>
+      <g class="blink" id="eyesOpen"><circle id="eyeL" r="8" style="fill:var(--ink)"/><circle id="eyeR" r="8" style="fill:var(--ink)"/><circle id="glintL" r="2.8" fill="#fff"/><circle id="glintR" r="2.8" fill="#fff"/></g>
+      <path id="nose" fill="none" style="stroke:var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+      <path id="eyesShut" fill="none" style="stroke:var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="brows" fill="none" style="stroke:var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+      <path id="mouth" fill="none" style="stroke:var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path id="chin" fill="none" style="stroke:var(--mochi-edge)" stroke-width="2.5" stroke-linecap="round"/>
+      <g id="sweat" style="fill:var(--transport)"></g>
+      <g id="tower"></g>
+    </g></g></g>
+    <text id="bagMore" x="346" y="332" text-anchor="end" font-weight="800" font-size="14" style="fill:var(--fg)"></text>
+  </svg>
+  <span id="sceneText" hidden></span>
+
+  <p class="bubble" id="say" aria-live="polite"></p>
+  <div class="example" id="exampleBar" hidden><span>Example month. None of this is saved.</span><button class="link" id="exampleOff" type="button">Back to my month</button></div>
+
+  <div class="budgetHead"><h2>Budgets</h2><button class="link" id="editBudgets" type="button">Set budgets</button></div>
+  <section class="buckets" id="buckets" aria-label="Spending buckets"></section>
+
+  <section class="ledger">
+    <h2>Spendings this month</h2>
+    <ul id="list"></ul>
+    <p class="empty" id="empty">Nothing yet. Tap Add spending and Mochi will start changing. <button class="link" id="exampleOn" type="button">Show an example month</button></p>
+  </section>
+  <p class="foot"><span id="status">Opening your spendings…</span> <button class="link" id="connect" type="button">Google Sheet connection</button></p>
+</main>
+
+<button class="add" id="add" type="button" disabled>+ Add spending</button>
+
+<div class="shade" id="shade" hidden></div>
+<form class="sheet" id="sheet" hidden aria-labelledby="sheetTitle" novalidate>
+  <h2 id="sheetTitle">What did you spend on?</h2>
+  <fieldset class="cats" id="cats"><legend hidden>Bucket</legend></fieldset>
+  <label class="field">Amount (S$)<input id="amount" inputmode="decimal" autocomplete="off" placeholder="0.00"></label>
+  <div class="two">
+    <label class="field">Note (optional)<input id="note" maxlength="60" autocomplete="off" placeholder="Chicken rice"></label>
+    <label class="field">Date<input id="date" type="date"></label>
+  </div>
+  <p class="err" id="err" hidden></p>
+  <div class="actions"><button type="button" id="cancel">Cancel</button><button class="save" id="save" type="submit">Add spending</button></div>
+</form>
+<form class="sheet" id="budgetSheet" hidden aria-labelledby="budgetTitle" novalidate>
+  <h2 id="budgetTitle">Monthly budgets (S$)</h2>
+  <div class="two" id="budgetFields"></div>
+  <p class="err" id="budgetErr" hidden></p>
+  <div class="actions"><button type="button" id="budgetCancel">Cancel</button><button class="save" id="budgetSave" type="submit">Save budgets</button></div>
+</form>
+<form class="sheet" id="connectSheet" hidden aria-labelledby="connectTitle" novalidate>
+  <h2 id="connectTitle">Connect your Google Sheet</h2>
+  <label class="field">Web app URL<input id="cfgUrl" type="url" autocomplete="off" autocapitalize="off" placeholder="https://script.google.com/macros/s/…/exec"></label>
+  <label class="field">Secret key<input id="cfgKey" type="password" autocomplete="off" autocapitalize="off"></label>
+  <p class="err" id="connectErr" hidden></p>
+  <div class="actions"><button type="button" id="connectCancel">Cancel</button><button class="save" id="connectSave" type="submit">Connect</button></div>
+</form>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+// Tuning: how much spending each change in the scene stands for.
+const PER_CARRIAGE = 30, PER_BALLOON = 30;
+const BAGS_AT_BUDGET = 6, FAT_AT_BUDGET = .8;   // Mochi tops out at 125% of the food budget
+const MAX_BAGS = 10, MAX_CARRIAGES = 7, MAX_BALLOONS = 6;
+const DEFAULT_BUDGETS = { food: 600, transport: 150, shopping: 200, others: 150 };
+let budgets = { ...DEFAULT_BUDGETS };
+let pose = { mouth: 'smile', stage: 0, sad: false };
+const CATS = [
+  { id: 'food', name: 'Food', c: 'var(--food)', note: 'Chicken rice' },
+  { id: 'transport', name: 'Transport', c: 'var(--transport)', note: 'MRT' },
+  { id: 'shopping', name: 'Shopping', c: 'var(--shopping)', note: 'New shoes' },
+  { id: 'others', name: 'Others', c: 'var(--others)', note: 'Haircut' },
+];
+const catOf = id => CATS.find(c => c.id === id) || CATS[3];
+const $ = id => document.getElementById(id);
+const SVG = 'http://www.w3.org/2000/svg';
+const pad = n => String(n).padStart(2, '0');
+const isoDay = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const money = cents => 'S$' + (cents / 100).toLocaleString('en-SG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+const now = new Date();
+let view = { y: now.getFullYear(), m: now.getMonth() };
+let expenses = [];
+let example = null;
+let store = null;         // { add(expense), remove(id) }
+let sayUntil = 0;
+let drawn = { bag: 0, car: 0, bal: 0 }, fatNow = 0, fatRaf = 0;
+const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const monthKey = () => `${view.y}-${pad(view.m + 1)}`;
+
+function exampleMonth() {
+  const k = monthKey();
+  return [
+    ['food', 3850, 'Korean BBQ', 24], ['shopping', 12900, 'New shoes', 22], ['transport', 4200, 'EZ-Link top up', 20],
+    ['food', 52000, 'Groceries and lunches', 16], ['others', 3500, 'Haircut', 12], ['shopping', 16400, 'Uniqlo', 9],
+    ['food', 11200, 'Hawker dinners', 6], ['transport', 2300, 'Grab home', 3], ['others', 2500, 'Birthday gift', 2],
+  ].map(([category, cents, note, d], i) => ({ id: 'ex' + i, category, cents, note, date: `${k}-${pad(d)}` }));
+}
+
+function setAttrs(el, a) { for (const k in a) el.setAttribute(k, a[k]); }
+function geom(f) {
+  const G = 300, cx = 180, rx = 40 + 52 * f, ry = 42 + 10 * f, hrx = 50 + 12 * f, hry = 44 + 4 * f;
+  const hy = G - 2 * ry - hry * .7;
+  return { G, cx, rx, ry, cy: G - ry, hrx, hry, hy, top: hy - hry, handX: rx + 11, handY: G - 44 };
+}
+function drawMochi(f) {
+  const { G, cx, rx, ry, cy, hrx, hry, hy, top, handX, handY } = geom(f), fy = hy - 2;
+  setAttrs($('body'), { rx, ry, cy });
+  setAttrs($('belly'), { rx: rx * .72, ry: ry * .74, cy: cy + ry * .14 });
+  setAttrs($('shadow'), { rx: rx + 12 });
+  $('footL').setAttribute('cx', cx - rx * .55); $('footR').setAttribute('cx', cx + rx * .55);
+  for (const [s, L] of [[-1, 'L'], [1, 'R']]) {
+    $('arm' + L).setAttribute('d', `M${cx + s * rx * .75} ${cy - ry * .45} Q${cx + s * (rx + 16)} ${cy - 6} ${cx + s * handX} ${handY}`);
+    setAttrs($('hand' + L), { cx: cx + s * handX, cy: handY });
+    const ex = cx + s * (hrx + 5);
+    setAttrs($('ear' + L), { cx: ex, cy: hy - 4 }); setAttrs($('earIn' + L), { cx: ex, cy: hy - 4 });
+  }
+  setAttrs($('head'), { rx: hrx, ry: hry, cy: hy });
+  $('tail').setAttribute('d', `M${cx + rx * .7} ${G - 16} C${cx + rx + 34} ${G - 6} ${cx + rx + 36} ${G - 62} ${cx + rx + 16} ${G - 60} C${cx + rx + 4} ${G - 58} ${cx + rx + 8} ${G - 42} ${cx + rx + 17} ${G - 46}`);
+  $('tuft').setAttribute('d', `M${cx - 7} ${top + 1} q1 -11 7 -13 M${cx} ${top} q1 -10 8 -11`);
+  const ex = 18 + 5 * f;
+  setAttrs($('maskL'), { cx: cx - ex, cy: fy }); setAttrs($('maskR'), { cx: cx + ex, cy: fy });
+  setAttrs($('muzzle'), { rx: 31 + 12 * f, ry: 21 + 2 * f, cy: hy + 19 });
+  setAttrs($('eyeL'), { cx: cx - ex, cy: fy }); setAttrs($('eyeR'), { cx: cx + ex, cy: fy });
+  setAttrs($('glintL'), { cx: cx - ex - 2.5, cy: fy - 3 }); setAttrs($('glintR'), { cx: cx + ex - 2.5, cy: fy - 3 });
+  $('nose').setAttribute('d', `M${cx - 4} ${hy + 10} h.1 M${cx + 4} ${hy + 10} h.1`);
+  const ck = 33 + 15 * f, cr = 8 + 6 * f;
+  setAttrs($('cheekL'), { cx: cx - ck, cy: hy + 17, rx: cr, ry: cr * .68 });
+  setAttrs($('cheekR'), { cx: cx + ck, cy: hy + 17, rx: cr, ry: cr * .68 });
+  const m = 9 + 3 * f;
+  const my = hy + 24;
+  $('mouth').setAttribute('d', {
+    smile: `M${cx - m} ${hy + 19} Q${cx} ${hy + 33} ${cx + m} ${hy + 19}`,
+    flat: `M${cx - m} ${my} H${cx + m}`,
+    frown: `M${cx - m} ${my + 5} Q${cx} ${my - 7} ${cx + m} ${my + 5}`,
+    strain: `M${cx - m} ${my} l${m / 2} -4 l${m / 2} 7 l${m / 2} -7 l${m / 2} 4`,
+  }[pose.mouth]);
+  const shut = pose.stage >= 2;
+  $('eyesOpen').style.display = shut ? 'none' : '';
+  $('eyesShut').setAttribute('d', shut ? `M${cx - ex - 7} ${fy - 6} l12 6 l-12 6 M${cx + ex + 7} ${fy - 6} l-12 6 l12 6` : '');
+  $('brows').setAttribute('d', pose.sad || shut ? `M${cx - ex - 9} ${fy - 11} L${cx - ex + 6} ${fy - 17} M${cx + ex + 9} ${fy - 11} L${cx + ex - 6} ${fy - 17}` : '');
+  const drops = pose.stage === 0 ? [] : [[hrx * .92, -hry * .55], [-hrx * .92, -hry * .5], [hrx + 14, -hry * .95]].slice(0, Math.min(3, pose.stage));
+  $('sweat').replaceChildren();
+  drops.forEach(([dx, dy]) => shape('path', { d: `M${cx + dx} ${hy + dy} q7 10 0 14 q-7 -4 0 -14 z` }, $('sweat')));
+  const w = 14 + 16 * f;
+  $('chin').setAttribute('d', `M${cx - w} ${hy + 40} Q${cx} ${hy + 48} ${cx + w} ${hy + 40}`);
+  $('chin').style.opacity = Math.max(0, (f - .45) * 2);
+}
+function animateFat(to) {
+  cancelAnimationFrame(fatRaf);
+  if (calm()) { fatNow = to; drawMochi(to); return; }
+  const from = fatNow, start = performance.now();
+  const step = t => {
+    const p = Math.min(1, (t - start) / 500), e = 1 - Math.pow(1 - p, 3);
+    fatNow = from + (to - from) * e; drawMochi(fatNow);
+    if (p < 1) fatRaf = requestAnimationFrame(step);
+  };
+  fatRaf = requestAnimationFrame(step);
+}
+function shape(tag, attrs, parent) { const e = document.createElementNS(SVG, tag); setAttrs(e, attrs); parent.appendChild(e); return e; }
+
+// Bag 1-4 hang from Mochi's hands; the rest pile up on Mochi's head.
+function drawBags(n, f) {
+  const hang = $('hanging'), tower = $('tower'); hang.replaceChildren(); tower.replaceChildren();
+  const { G, cx, rx, top, handX, handY } = geom(f);
+  const shown = Math.min(n, MAX_BAGS), tints = ['--shopping', '--others', '--food', '--transport'];
+  for (let i = 0; i < shown; i++) {
+    let x, y, parent = tower;
+    if (i < 4) {
+      const side = i % 2 ? 1 : -1, out = i < 2 ? 16 : 42, hx = cx + side * handX;
+      x = cx + side * (rx + out) - 12; y = G - 33; parent = hang;
+      const strap = shape('path', { d: `M${hx} ${handY} L${x + 12} ${y + 2}`, fill: 'none', 'stroke-width': 2 }, hang);
+      strap.style.stroke = 'var(--ink)';
+    } else {
+      const [dx, row] = [[-27, 0], [27, 0], [0, 0], [-14, 1], [14, 1], [0, 2]][i - 4];
+      x = cx + dx - 12; y = top - 26 - row * 24 + (row === 0 && dx ? 6 + 4 * (1 - f) : 0);
+    }
+    const b = shape('g', { transform: `translate(${x} ${y}) scale(.85)` }, parent);
+    const inner = shape('g', i >= drawn.bag ? { class: 'pop' } : {}, b);
+    shape('path', { d: 'M8 8 V3 a6 6 0 0 1 12 0 V8', fill: 'none', 'stroke-width': 2.5 }, inner).style.stroke = 'var(--ink)';
+    shape('rect', { x: 0, y: 7, width: 28, height: 29, rx: 5 }, inner).style.fill = `var(${tints[i % 4]})`;
+    shape('rect', { x: 8, y: 17, width: 12, height: 9, rx: 3, fill: '#fff', opacity: .85 }, inner);
+  }
+  tower.style.transformOrigin = `${cx}px ${top}px`;
+  const onHead = n > 4;
+  $('tuft').style.display = onHead ? 'none' : '';
+  $('bagMore').textContent = n > MAX_BAGS ? `+${n - MAX_BAGS} more bags` : '';
+  drawn.bag = n;
+}
+function drawTrain(n) {
+  const g = $('train'); g.replaceChildren();
+  if (!n) { drawn.car = 0; return; }
+  const shown = Math.min(n, MAX_CARRIAGES), w = 44;
+  for (let i = 0; i < shown; i++) {
+    const x = 10 + i * w, c = shape('g', i >= drawn.car ? { class: 'pop' } : {}, g);
+    const head = i === shown - 1;
+    shape('path', { d: head ? `M${x} 18 h30 q10 0 12 11 v11 h-42 z` : `M${x} 18 h42 v22 h-42 z` }, c).style.fill = 'var(--transport)';
+    shape('rect', { x: x, y: 33, width: 42, height: 3, fill: '#fff', opacity: .8 }, c);
+    shape('rect', { x: x + 6, y: 22, width: 11, height: 8, rx: 2 }, c).style.fill = 'var(--window)';
+    shape('rect', { x: x + 22, y: 22, width: 11, height: 8, rx: 2 }, c).style.fill = 'var(--window)';
+  }
+  if (n > MAX_CARRIAGES) { const t = shape('text', { x: 10 + shown * w + 2, y: 34, 'font-weight': 800, 'font-size': 12 }, g); t.textContent = `+${n - MAX_CARRIAGES}`; t.style.fill = 'var(--fg)'; }
+  drawn.car = n;
+}
+function drawBalloons(n) {
+  const g = $('balloons'); g.replaceChildren();
+  const slots = [[30, 186], [330, 186], [30, 134], [330, 134], [30, 84], [330, 84]];
+  const tints = ['--others', '--shopping', '--transport', '--food'];
+  for (let i = 0; i < Math.min(n, MAX_BALLOONS); i++) {
+    const [x, y] = slots[i], out = shape('g', { class: 'bob' }, g), b = shape('g', i >= drawn.bal ? { class: 'pop' } : {}, out);
+    shape('path', { d: `M${x} ${y + 17} q4 12 -1 24`, fill: 'none', 'stroke-width': 1.5 }, b).style.stroke = 'var(--muted)';
+    shape('ellipse', { cx: x, cy: y, rx: 14, ry: 17 }, b).style.fill = `var(${tints[i % 4]})`;
+    shape('ellipse', { cx: x - 5, cy: y - 6, rx: 3, ry: 5, fill: '#fff', opacity: .55 }, b);
+  }
+  if (n > MAX_BALLOONS) { const t = shape('text', { x: 30, y: 66, 'text-anchor': 'middle', 'font-weight': 800, 'font-size': 12 }, g); t.textContent = `+${n - MAX_BALLOONS}`; t.style.fill = 'var(--fg)'; }
+  drawn.bal = n;
+}
+
+const monthRows = () => (example || expenses.filter(e => e.date && e.date.startsWith(monthKey())));
+const overBy = (t, id) => t[id] - budgets[id] * 100;
+function moodLine(t) {
+  if (!t.food && !t.transport && !t.shopping && !t.others) return "Hi, I'm Mochi. What did you spend today?";
+  const food = overBy(t, 'food') > 0, shop = overBy(t, 'shopping') > 0;
+  if (food && shop) return "Too full and these bags are too heavy. Please stop.";
+  if (shop) return `So heavy! You're ${money(overBy(t, 'shopping'))} over on shopping.`;
+  if (food) return `I can't smile. You're ${money(overBy(t, 'food'))} over on food.`;
+  for (const c of CATS) if (overBy(t, c.id) > 0) return `You're ${money(overBy(t, c.id))} over on ${c.name.toLowerCase()}.`;
+  if (t.shopping >= budgets.shopping * 80) return 'These bags are getting heavy. No more shopping, okay?';
+  if (t.food >= budgets.food * 90) return 'Nearly full. Careful with the food budget.';
+  return 'All within budget. Keep it up!';
+}
+function reaction(cat, t) {
+  const over = overBy(t, cat), left = -over;
+  if (cat === 'food') return over > 0 ? `No more smiling. Food is ${money(over)} over budget.` : `Yum! ${money(left)} of food budget left.`;
+  if (cat === 'shopping') return over > 0 ? `Oof, too heavy! Shopping is ${money(over)} over budget.` : `Another bag to carry. ${money(left)} of shopping budget left.`;
+  const name = catOf(cat).name.toLowerCase();
+  return over > 0 ? `${catOf(cat).name} is ${money(over)} over budget.` : `${money(left)} of ${name} budget left.`;
+}
+
+function render(reactTo) {
+  const rows = monthRows();
+  const t = { food: 0, transport: 0, shopping: 0, others: 0 };
+  rows.forEach(e => { t[catOf(e.category).id] += e.cents; });
+  const all = t.food + t.transport + t.shopping + t.others;
+  $('month').textContent = new Date(view.y, view.m, 1).toLocaleDateString('en-SG', { month: 'long', year: 'numeric' });
+  $('total').textContent = money(all);
+
+  const foodRatio = t.food / 100 / budgets.food, shopRatio = t.shopping / 100 / budgets.shopping;
+  const f = Math.min(1, foodRatio * FAT_AT_BUDGET);
+  const bags = Math.ceil(shopRatio * BAGS_AT_BUDGET), cars = Math.ceil(t.transport / 100 / PER_CARRIAGE), bals = Math.ceil(t.others / 100 / PER_BALLOON);
+  const stage = shopRatio > 1.5 ? 3 : shopRatio > 1 ? 2 : shopRatio >= .8 ? 1 : 0;
+  pose = { stage, sad: foodRatio > 1, mouth: foodRatio > 1 ? 'frown' : stage >= 2 ? 'strain' : foodRatio >= .9 ? 'flat' : 'smile' };
+  $('shaker').setAttribute('class', stage >= 2 ? `strain${stage}` : '');
+  $('squash').style.transform = `scale(${1 + [0, .01, .05, .09][stage]}, ${1 - [0, .02, .08, .14][stage]})`;
+  animateFat(f); drawBags(bags, f); drawTrain(cars); drawBalloons(bals);
+  const feeling = stage >= 2 ? 'struggling under the weight' : foodRatio > 1 ? 'not smiling' : 'doing fine';
+  $('sceneText').textContent = `Mochi is ${feeling}, carrying ${plural(bags, 'shopping bag')}, with a train of ${plural(cars, 'carriage')} and ${plural(bals, 'balloon')}.`;
+  // A saved row re-renders moments later when the store confirms it; keep Mochi's reaction on screen.
+  if (reactTo) { $('say').textContent = reaction(reactTo, t); sayUntil = Date.now() + 5000; }
+  else if (Date.now() > sayUntil) $('say').textContent = moodLine(t);
+
+  const fx = {};
+  CATS.forEach(c => {
+    const o = overBy(t, c.id);
+    fx[c.id] = o > 0 ? `${money(o)} over S$${budgets[c.id]}` : `${money(-o)} left of S$${budgets[c.id]}`;
+  });
+  $('buckets').replaceChildren(...CATS.map(c => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = overBy(t, c.id) > 0 ? 'bucket over' : 'bucket'; b.style.setProperty('--c', c.c);
+    b.setAttribute('aria-label', `Add to ${c.name}. ${money(t[c.id])} so far, ${fx[c.id]}.`);
+    const bar = document.createElement('span'); bar.className = 'bar';
+    const fill = document.createElement('i'); fill.style.width = Math.min(100, t[c.id] / budgets[c.id]) + '%'; bar.appendChild(fill);
+    for (const [cls, text] of [['name', c.name], ['amt', money(t[c.id])], ['bar', null], ['fx', fx[c.id]]]) {
+      if (cls === 'bar') { b.appendChild(bar); continue; }
+      const s = document.createElement('span'); s.className = cls; s.textContent = text; b.appendChild(s);
+    }
+    b.onclick = () => openSheet(c.id);
+    return b;
+  }));
+
+  const sorted = [...rows].sort((a, b) => (b.date + (b.at || 0)).localeCompare(a.date + (a.at || 0)));
+  $('list').replaceChildren(...sorted.map(e => {
+    const c = catOf(e.category), li = document.createElement('li');
+    li.className = 'row'; li.style.setProperty('--c', c.c);
+    const dot = document.createElement('span'); dot.className = 'dot';
+    const what = document.createElement('div'); what.className = 'what'; what.textContent = e.note || c.name;
+    const sm = document.createElement('small');
+    const pick = document.createElement('select'); pick.className = 'catPick'; pick.disabled = !!example;
+    pick.setAttribute('aria-label', `Bucket for ${e.note || c.name}`);
+    CATS.forEach(o => { const op = document.createElement('option'); op.value = o.id; op.textContent = o.name; pick.appendChild(op); });
+    pick.value = c.id;
+    pick.onchange = () => recategorize(e, pick.value);
+    sm.append(pick, ` · ${new Date(e.date + 'T00:00').toLocaleDateString('en-SG', { day: 'numeric', month: 'short' })}`);
+    if (e.source === 'apple-pay') { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = ' · Apple Pay'; sm.appendChild(tag); }
+    what.appendChild(sm);
+    const amt = document.createElement('div'); amt.className = 'amt'; amt.textContent = money(e.cents);
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.textContent = '✕';
+    del.setAttribute('aria-label', `Remove ${e.note || c.name}, ${money(e.cents)}`);
+    del.hidden = !!example;
+    del.onclick = () => removeExpense(e);
+    li.append(dot, what, amt, del);
+    return li;
+  }));
+  $('empty').hidden = rows.length > 0;
+  $('exampleBar').hidden = !example;
+
+  if (reactTo) {
+    const m = $('mochi'); m.classList.remove('boing'); void m.getBoundingClientRect(); m.classList.add('boing');
+  }
+}
+
+let toastTimer = 0;
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 3500); }
+
+async function recategorize(e, category) {
+  sayUntil = 0;
+  try { await store.update(e.id, category); toast(e.source === 'apple-pay' ? `${e.note} will go to ${catOf(category).name} from now on.` : `Moved to ${catOf(category).name}.`); }
+  catch { toast("Couldn't change the bucket. Check your connection and try again."); render(); }
+}
+async function removeExpense(e) {
+  try { await store.remove(e.id); toast(`Removed ${e.note || catOf(e.category).name}.`); }
+  catch { toast("Couldn't remove that. Check your connection and try again."); }
+}
+
+// Sheet
+CATS.forEach(c => {
+  const l = document.createElement('label'); l.style.setProperty('--c', c.c);
+  const i = document.createElement('input'); i.type = 'radio'; i.name = 'cat'; i.value = c.id; i.id = 'cat-' + c.id;
+  i.onchange = () => { $('note').placeholder = c.note; };
+  const s = document.createElement('span'); s.textContent = c.name;
+  l.append(i, s); $('cats').appendChild(l);
+});
+function openSheet(cat) {
+  $(`cat-${cat}`).checked = true; $('note').placeholder = catOf(cat).note;
+  $('amount').value = ''; $('note').value = ''; $('err').hidden = true;
+  const here = view.y === now.getFullYear() && view.m === now.getMonth();
+  $('date').value = here ? isoDay(new Date()) : isoDay(new Date(view.y, view.m + 1, 0));
+  $('shade').hidden = false; $('sheet').hidden = false; $('amount').focus();
+}
+function closeSheet() { $('shade').hidden = true; $('sheet').hidden = true; $('budgetSheet').hidden = true; $('connectSheet').hidden = true; $('add').focus(); }
+CATS.forEach(c => {
+  const l = document.createElement('label'); l.className = 'field'; l.textContent = c.name;
+  const i = document.createElement('input'); i.id = 'budget-' + c.id; i.inputMode = 'decimal'; i.autocomplete = 'off';
+  l.appendChild(i); $('budgetFields').appendChild(l);
+});
+$('editBudgets').onclick = () => {
+  CATS.forEach(c => { $('budget-' + c.id).value = budgets[c.id]; });
+  $('budgetErr').hidden = true; $('shade').hidden = false; $('budgetSheet').hidden = false; $('budget-food').focus();
+};
+$('budgetCancel').onclick = closeSheet;
+$('budgetSheet').addEventListener('submit', async e => {
+  e.preventDefault();
+  const next = {};
+  for (const c of CATS) {
+    const v = Number($('budget-' + c.id).value.trim().replace(/[,$\s]/g, ''));
+    if (!(v > 0) || v > 1000000) { const er = $('budgetErr'); er.textContent = `Enter a ${c.name} budget above 0, like 200.`; er.hidden = false; return; }
+    next[c.id] = v;
+  }
+  $('budgetSave').disabled = true;
+  try { await store.saveBudgets(next); budgets = next; sayUntil = 0; closeSheet(); render(); toast('Budgets saved.'); }
+  catch { const er = $('budgetErr'); er.textContent = "Couldn't save your budgets. Check your connection and try again."; er.hidden = false; }
+  $('budgetSave').disabled = false;
+});
+function fail(msg) { const e = $('err'); e.textContent = msg; e.hidden = false; }
+$('add').onclick = () => openSheet('food');
+$('cancel').onclick = closeSheet;
+$('shade').onclick = closeSheet;
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('sheet').hidden) closeSheet(); });
+$('sheet').addEventListener('submit', async e => {
+  e.preventDefault();
+  const raw = $('amount').value.trim().replace(/[,$\s]/g, '');
+  const val = /^\d+(\.\d{0,2})?$|^\.\d{1,2}$/.test(raw) ? Number(raw) : NaN;
+  if (!(val > 0) || val > 1000000) return fail('Enter an amount like 12.50.');
+  const date = $('date').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return fail('Pick a date for this spending.');
+  const category = document.querySelector('input[name=cat]:checked').value;
+  const rec = { category, cents: Math.round(val * 100), note: $('note').value.trim().slice(0, 60), date, at: Date.now() };
+  $('save').disabled = true;
+  try {
+    await store.add(rec);
+    example = null;
+    const [y, m] = date.split('-').map(Number);
+    view = { y, m: m - 1 };
+    $('save').disabled = false;
+    closeSheet(); render(category);
+  } catch {
+    $('save').disabled = false;
+    fail("Couldn't save that. Check your connection and try again.");
+  }
+});
+
+function shift(d) { const x = new Date(view.y, view.m + d, 1); view = { y: x.getFullYear(), m: x.getMonth() }; example = null; render(); }
+$('prev').onclick = () => shift(-1);
+$('next').onclick = () => shift(1);
+$('exampleOn').onclick = () => { example = exampleMonth(); render(); };
+$('exampleOff').onclick = () => { example = null; render(); };
+
+// Storage: your Google Sheet once connected, otherwise this browser only.
+const KEY = 'mochi-money-expenses';
+const read = (k, fallback) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null ? fallback : v; } catch { return fallback; } };
+const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+
+function useLocal() {
+  expenses = read(KEY, []);
+  budgets = { ...DEFAULT_BUDGETS, ...read(KEY + '-budgets', {}) };
+  const persist = () => {
+    $('status').textContent = write(KEY, expenses) ? 'Saved on this phone only. Connect your Google Sheet to capture Apple Pay.'
+      : 'This browser is blocking storage, so these spendings disappear when you close the page.';
+  };
+  store = {
+    saveBudgets: async b => { write(KEY + '-budgets', b); },
+    add: async r => { expenses = [...expenses, { ...r, id: 'e' + r.at, source: 'manual' }]; persist(); },
+    remove: async id => { expenses = expenses.filter(e => e.id !== id); persist(); render(); },
+    update: async (id, category) => { expenses = expenses.map(e => e.id === id ? { ...e, category } : e); persist(); render(); },
+  };
+  persist(); $('add').disabled = false; render();
+}
+
+async function call(cfg, action, payload) {
+  // text/plain keeps this a simple request, which Apps Script can answer across origins.
+  const res = await fetch(cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ ...payload, key: cfg.key, action }) });
+  const out = await res.json();
+  if (!out.ok) throw new Error(out.error || 'failed');
+  return out;
+}
+
+let refreshing = false;
+async function refresh(cfg) {
+  if (refreshing) return;
+  refreshing = true;
+  try {
+    const data = await call(cfg, 'list');
+    expenses = data.expenses;
+    budgets = { ...DEFAULT_BUDGETS, ...data.budgets };
+    write(KEY + '-cache', { expenses, budgets });
+    $('status').textContent = data.problems ? `Connected. ${plural(data.problems, 'payment')} in the Problems tab of your Sheet (foreign currency or unreadable) to add by hand, then delete from that tab.` : 'Connected to your Google Sheet.';
+    // Show any Apple Pay payment that arrived since the app was last open.
+    const seen = read(KEY + '-seen', 0);
+    const fresh = expenses.filter(e => e.source === 'apple-pay' && e.at > seen).sort((x, y) => x.at - y.at).pop();
+    if (fresh) {
+      write(KEY + '-seen', fresh.at);
+      example = null;
+      const [y, m] = fresh.date.split('-').map(Number);
+      view = { y, m: m - 1 };
+      render(fresh.category);
+      $('say').textContent = `${money(fresh.cents)} at ${fresh.note}! ${$('say').textContent}`;
+    } else render();
+  } catch (err) {
+    $('status').textContent = err.message === 'unauthorized' ? 'The secret key was rejected. Check your connection details.'
+      : "Can't reach your Google Sheet, so this may be out of date.";
+  } finally { refreshing = false; }
+}
+
+let watching = false;
+function useSheet(cfg) {
+  const cache = read(KEY + '-cache', null);
+  if (cache) { expenses = cache.expenses; budgets = { ...DEFAULT_BUDGETS, ...cache.budgets }; }
+  const after = async p => { await p; await refresh(cfg); };
+  store = {
+    add: r => after(call(cfg, 'add', r)),
+    remove: id => after(call(cfg, 'remove', { id })),
+    update: (id, category) => after(call(cfg, 'recategorize', { id, category })),
+    saveBudgets: b => after(call(cfg, 'budgets', { budgets: b })),
+  };
+  $('add').disabled = false;
+  render();
+  if (!watching) {
+    watching = true;
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(cfg); });
+  }
+  return refresh(cfg);
+}
+
+$('connect').onclick = () => {
+  const cfg = read(KEY + '-config', {});
+  $('cfgUrl').value = cfg.url || ''; $('cfgKey').value = cfg.key || '';
+  $('connectErr').hidden = true; $('shade').hidden = false; $('connectSheet').hidden = false; $('cfgUrl').focus();
+};
+$('connectCancel').onclick = closeSheet;
+$('connectSheet').addEventListener('submit', async e => {
+  e.preventDefault();
+  const cfg = { url: $('cfgUrl').value.trim(), key: $('cfgKey').value.trim() };
+  const err = msg => { $('connectErr').textContent = msg; $('connectErr').hidden = false; };
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(cfg.url)) return err('Paste the web app URL ending in /exec.');
+  if (!cfg.key) return err('Paste the secret key from Apps Script.');
+  $('connectSave').disabled = true;
+  try {
+    await call(cfg, 'list');
+    write(KEY + '-config', cfg);
+    write(KEY + '-seen', Date.now());
+    closeSheet(); await useSheet(cfg); toast('Connected to your Google Sheet.');
+  } catch (ex) {
+    err(ex.message === 'unauthorized' ? 'That secret key was rejected. Copy it again from Apps Script.' : "Couldn't reach that URL. Check it and your connection.");
+  }
+  $('connectSave').disabled = false;
+});
+
+function start() {
+  const cfg = read(KEY + '-config', null);
+  if (!cfg || !cfg.url || !cfg.key) return useLocal();
+  useSheet(cfg);
+}
+drawMochi(0);
+start();
+</script>
+</body>
+</html>
